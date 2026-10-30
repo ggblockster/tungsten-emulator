@@ -38,7 +38,7 @@ function createStore(db, name, keyPath) {
     }
 }
 
-function transaction(storeName, mode = "readonly") {
+async function transaction(storeName, mode = "readonly") {
     return openDB().then(db => db.transaction(storeName, mode).objectStore(storeName));
 }
 
@@ -85,3 +85,22 @@ export const loadAllRoms = () =>
 
 export const deleteRom = sha256 =>
     remove(STORES.ROMS, sha256);
+
+export const localSaveRom = (function () {
+    var a = document.createElement("a");
+    document.body.appendChild(a);
+    a.style = "display: none";
+    return async function (sha256, filename) {
+        const data = await get(STORES.ROMS, sha256);
+        if (!data) {
+            console.warn("ROM not found!", sha256);
+            return;
+        }
+        const blob = data instanceof Blob ? data : new Blob([data]);
+        var url = window.URL.createObjectURL(blob);
+        a.href = url;
+        a.download = filename;
+        a.click();
+        setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    };
+}());

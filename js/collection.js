@@ -1,7 +1,8 @@
 import {
     saveRom,
     loadRom,
-    deleteRom
+    deleteRom,
+    localSaveRom
 } from "./idb.js";
 
 import { cloud, syncCollection } from "./cloud.js";
@@ -12,7 +13,13 @@ import {
     runStatusIcon, reuploadBtn, reuploadInput,
     removeGameBtn, recordHours, loadingBG,
     favouriteBtn, favStateIcon,
-    consoleText
+    consoleText, missingBadge,
+    addGameToList, gameLogo,
+    noDesc, gameDesc,
+    gSHA256,
+    shaWrapper,
+    gFilename,
+    gFilesize
 } from "./dom.js";
 
 import { runGame, setEmulatorCloseCallback } from "./emulator.js";
@@ -72,34 +79,6 @@ uploadEl.addEventListener(
     }
 );
 
-function addGameToList(game) {
-    const li = document.createElement("li");
-    li.dataset.sha256 = game.sha256;
-    li.dataset.filename = game.filename;
-    li.dataset.title = game.title ?? "";
-    li.dataset.banner = game.banner ?? "";
-    li.dataset.logo = game.logo ?? "";
-    li.classList.add("listROM");
-
-    li.title = game.title ?? game.filename.replace(/\.[^.]+$/, "") ?? "(invalid ROM file)";
-
-    if (game.missing)
-        li.classList.add("missing");
-
-    const img = document.createElement("img");
-    img.src = "/assets/img/avatarBlank.svg";
-    const text = document.createElement("span");
-    text.textContent = game.title ?? game.filename.replace(/\.[^.]+$/, "");
-
-    li.append(
-        img,
-        text
-    );
-
-    gameListEl.appendChild(li);
-    updateEmptyState();
-}
-
 function markRomInstalled(sha256) {
     const li =
         gameListEl.querySelector(
@@ -138,17 +117,28 @@ gameListEl.addEventListener(
             ?.classList.remove("selected");
         li.classList.add("selected");
         const game = collectionGames[selectedSha256];
-
         const rom = await loadRom(selectedSha256);
+        if (rom) {
+            missingBadge.hidden = true;
+        } else {
+            missingBadge.hidden = false;
+        }
 
         if (!rom) {
             selectedRom = null;
             selectedFavourite = game?.favourite ?? false;
             updateFavouriteButton();
+
+            const metadata = await getGameMetadata(
+                selectedSha256,
+                getPlatform(li.dataset.filename)
+            );
+
             showGameDetails({
                 sha256: selectedSha256,
                 filename: li.dataset.filename,
-                title: game?.title ?? li.dataset.title
+                ...metadata,
+                title: game?.title ?? metadata?.title ?? li.dataset.title
             });
 
             reuploadBtn.hidden = false;
@@ -170,7 +160,7 @@ gameListEl.addEventListener(
         selectedFavourite = game?.favourite ?? false;
         updateFavouriteButton();
         reuploadBtn.hidden = true;
-        showGameDetails(selectedRom);
+        showGameDetails(selectedRom, rom ? true : false);
         updateRunButton();
     }
 );
@@ -199,24 +189,79 @@ favouriteBtn.addEventListener(
     }
 );
 
-function showGameDetails(rom) {
+function formatFileSize(bytes) {
+    const units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+    let i = 0;
+
+    while (bytes >= 1000 && i < units.length - 1) {
+        bytes /= 1000;
+        i++;
+    }
+
+    return `${bytes.toFixed(1)} ${units[i]}`;
+}
+
+function showGameDetails(rom, missing) {
     gameTitleText.textContent =
         rom.title ||
         rom.filename.replace(/\.[^.]+$/, "");
+        
+    descTitle.textContent =
+        rom.title ||
+        rom.filename.replace(/\.[^.]+$/, "");
+
+    noDesc.style.display = rom.desc ? "none" : "block";
+    gameDesc.style.display = rom.desc ? "block" : "none";
+    gFilename.textContent = rom.filename;
+    console.log(missing === undefined);
+    if (missing === undefined) {
+        gFilesize.textContent = "N/A"
+    } else {
+        gFilesize.textContent = formatFileSize(rom.size);
+    }
+    if (rom.desc) {
+        gameDesc.innerHTML = rom.desc;
+    }
+
+    gSHA256.textContent = rom.sha256;
+    shaWrapper.hidden = false;
 
     gameTitleText.classList.remove("ital");
+    if (rom.banner) {
+        gameHero.style.backgroundImage = `
+        linear-gradient(
+            to bottom,
+            transparent 40%,
+            #1a1d29 100%
+        ),
+        url(${rom.banner})`;
+        gameHero.style.backgroundSize = "100%";
+        gameHero.style.backgroundRepeat = "none";
+    } else {
+        const svgRef = getPlatform(rom.filename);
+        gameHero.style.backgroundImage = `url(${getConsoleSVG(svgRef)})`;
+        gameHero.style.backgroundRepeat = "repeat";
+        if (gameHero.style.backgroundImage == "url(/assets/img/controllers/bannerBlank.svg") {
+            gameHero.style.backgroundSize = "88px";
+        } else {
+            gameHero.style.backgroundSize = "196px auto";
+        }
+    }
 
-    const svgRef = getPlatform(rom.filename);
-    gameHero.style.backgroundImage = `url(${getConsoleSVG(svgRef)})`;
+    if (rom.logo) {
+        gameLogo.style.display = "block";
+        gameLogo.src = rom.logo;
+        gameTitleText.style.display = "none";
+    } else {
+        gameTitleText.style.display = "block";
+        gameLogo.style.display = "none";
+        gameLogo.src = "";
+    }
+
     try {
         consoleText.textContent = consoleLookup[getPlatform(rom.filename)];
     } catch {
         consoleText.textContent = "?????";
-    }
-    if (gameHero.style.backgroundImage == "url(/assets/img/controllers/bannerBlank.svg") {
-        gameHero.style.backgroundSize = "88px";
-    } else {
-        gameHero.style.backgroundSize = "196px auto";
     }
 
     runStatusText.textContent = "Play";
@@ -237,10 +282,31 @@ removeGameBtn.addEventListener(
     async () => {
         if (!selectedSha256)
             return;
-        if (!confirm(
-            "Remove this game from your collection?"
-        ))
+        if (!confirm("Remove ROM? You will need to reupload your ROM to play at a later time.")) return;
+
+        await deleteRom(
+            selectedSha256
+        );
+
+        gameListEl
+            .querySelector(
+                `[data-sha256="${selectedSha256}"]`
+            )
+            ?.remove();
+
+        selectedRom = null;
+        selectedSha256 = null;
+        updateEmptyState();
+        updateRunButton();
+    }
+);
+
+document.getElementById("removeGame").addEventListener(
+    "click",
+    async () => {
+        if (!selectedSha256)
             return;
+        if (!confirm("PERMANENTLY remove this game from your collection?\n(THIS CANNOT BE UNDONE!!!)")) return;
         await cloud.removeGame(
             selectedSha256
         );
@@ -392,4 +458,27 @@ runBtn.addEventListener("click", () => {
         return;
 
     runGame(selectedRom);
+});
+
+saveLocally.addEventListener("click", async()=> {
+    const metadata = await getGameMetadata(selectedRom.sha256, getPlatform(selectedRom.filename));
+    const extension = selectedRom.filename.substring(
+        selectedRom.filename.lastIndexOf(".")
+    );
+    localSaveRom(selectedRom.sha256, `${metadata.title}${extension}` || selectedRom.filename);
+});
+
+// shortcuts
+document.addEventListener("keydown", (e)=> {
+    if (e.code === "Enter") {
+        runBtn.click()
+    } else if (e.code === "KeyR") {
+        reuploadBtn.click();
+    } else if (e.code === "KeyS") {
+        document.getElementById("injectSave").click();
+    } else if (e.code === "Backspace") {
+        removeGameBtn.click();
+    } else if (e.code === "Delete") {
+        document.getElementById("removeGame").click();
+    }
 });

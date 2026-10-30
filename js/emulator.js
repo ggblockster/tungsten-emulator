@@ -17,6 +17,7 @@ export function runGame(rom) {
     }
 
     const gameName =
+        rom.title ||
         rom.filename.replace(/\.[^.]+$/, "");
 
     const width = 640;
@@ -92,18 +93,18 @@ html, body {
     padding:0;
     width:100vw;
     height:100vh;
-    font-family: "Inter" !important;
+    font-family: "Inter", system-ui !important;
 }
 
 #game {
     width:100%;
     height:100vh;
-    font-family: "Inter" !important;
+    font-family: "Inter", system-ui !important;
 }
 * {
     margin: 0;
     padding: 0;
-    font-family: "Inter" !important;
+    font-family: "Inter", system-ui !important;
 }
 </style>
 </head>

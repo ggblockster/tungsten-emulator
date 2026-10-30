@@ -3762,82 +3762,91 @@
         "title": "Pocket Stadium"
     },
     "2cfec2223090dc9f544aa36c99c48801be5018757a1366b88d8f40739541458e": {
-        "title": "Pokemon - Blaue Edition (Germany) (SGB Enhanced)"
+        "title": "Pokémon - Blaue Edition (Germany) (SGB Enhanced)"
     },
     "2a951313c2640e8c2cb21f25d1db019ae6245d9c7121f754fa61afd7bee6452d": {
-        "title": "Pokemon - Blue Version (SGB Enhanced)"
+        "title": "Pokémon - Blue Version (SGB Enhanced)"
     },
     "4acccf140168b3f09c430a045a7151d294ec377e341cd0c692c78e8e9fb42cb5": {
-        "title": "Pokemon - Blue Version (Hong Kong) (SGB Enhanced) (Pirate)"
+        "title": "Pokémon - Blue Version (Hong Kong) (SGB Enhanced) (Pirate)"
     },
     "55d56d6f73225886bfdc0db1ddb754d2f4dfc6ef5ae74ddfa079c23b6ec80039": {
-        "title": "Pokemon - Edicion Amarilla - Edicion Especial Pikachu (Spain) (CGB+SGB Enhanced)"
+        "title": "Pokémon - Edicion Amarilla - Edicion Especial Pikachu (Spain) (CGB+SGB Enhanced)"
     },
     "31317f74fed2935dfc5fbb6ada766cf8515949c85c6c6e8d32d0f752b85b8f9e": {
-        "title": "Pokemon - Edicion Azul (Spain) (SGB Enhanced)"
+        "title": "Pokémon - Edicion Azul (Spain) (SGB Enhanced)"
     },
     "a756cf7ad888aa46de4b9699a177a0edf1775e59eb6330014c6f5c139be9c45d": {
-        "title": "Pokemon - Edicion Roja (Spain) (SGB Enhanced)"
+        "title": "Pokémon - Edicion Roja (Spain) (SGB Enhanced)"
     },
     "aed41ea3e785ac9c06fd641270ff30b59de5fc64fed4349e81a9aaa4ba7d31f9": {
-        "title": "Pokemon - Gelbe Edition - Special Pikachu Edition (Germany) (CGB+SGB Enhanced)"
+        "title": "Pokémon - Gelbe Edition - Special Pikachu Edition (Germany) (CGB+SGB Enhanced)"
     },
     "5ca7ba01642a3b27b0cc0b5349b52792795b62d3ed977e98a09390659af96b7b": {
-        "title": "Pokemon - Red Version (SGB Enhanced)"
+        "title": "Pokémon - Red Version (SGB Enhanced)",
+        "banner": "https://cdn2.steamgriddb.com/hero_thumb/09c9e2d4a95bbada9230220c9d53e26d.jpg",
+        "logo": "https://cdn2.steamgriddb.com/logo_thumb/8b89afaf8e00e0a46ea4d76ac473b1a2.png",
+        "cover": "https://cdn2.steamgriddb.com/thumb/deaf47d9953d7c0216d9c3aa944fe5ba.jpg"
+    },
+    "08b1e7a5e0419f66758eb7f0ebf0e119ff68b2f82f9f3a72e3692f31636caca0": {
+        "title": "Pokémon - Red Version (Enhanced)",
+        "banner": "https://cdn2.steamgriddb.com/hero_thumb/09c9e2d4a95bbada9230220c9d53e26d.jpg",
+        "logo": "https://cdn2.steamgriddb.com/logo_thumb/8b89afaf8e00e0a46ea4d76ac473b1a2.png",
+        "cover": "https://cdn2.steamgriddb.com/thumb/deaf47d9953d7c0216d9c3aa944fe5ba.jpg"
     },
     "e6b6444657e52cb2d162d5e7e0f1683f592905a28876ec90e9e8c73e204354d4": {
-        "title": "Pokemon - Red Version (Hong Kong) (SGB Enhanced) (Pirate)"
+        "title": "Pokémon - Red Version (Hong Kong) (SGB Enhanced) (Pirate)"
     },
     "9cd186b288dbcd52413d561ae449f1f700c32b45af56dbf849095d4a0c8637a6": {
-        "title": "Pokemon - Rote Edition (Germany) (SGB Enhanced)"
+        "title": "Pokémon - Rote Edition (Germany) (SGB Enhanced)"
     },
     "73dee67befed0c39cd0a6ed53a98ff5b98b3bddc3e7a0dae1d982776a4d0889b": {
-        "title": "Pokemon - Version Bleue (France) (SGB Enhanced)"
+        "title": "Pokémon - Version Bleue (France) (SGB Enhanced)"
     },
     "77b31f874fd877fbf48757f315ffc3144e06fc7222aba6ac4eda2045ebf5d3fa": {
-        "title": "Pokemon - Version Jaune - Edition Speciale Pikachu (France) (CGB+SGB Enhanced)"
+        "title": "Pokémon - Version Jaune - Edition Speciale Pikachu (France) (CGB+SGB Enhanced)"
     },
     "23766290f3b2347f815f1e8977c3b84047ed880cadda8c4f1a3595a633daa303": {
-        "title": "Pokemon - Version Rouge (France) (SGB Enhanced)"
+        "title": "Pokémon - Version Rouge (France) (SGB Enhanced)"
     },
     "e197c7535135a516fe9bf92cf7821c9f72926bf90fce3a2a5742d1b0b6a0564b": {
-        "title": "Pokemon - Versione Blu (Italy) (SGB Enhanced)"
+        "title": "Pokémon - Versione Blu (Italy) (SGB Enhanced)"
     },
     "e3f0663e16ac240bc1c6681cdb95ca7230d86fca23eb931ea58f4abce0002856": {
-        "title": "Pokemon - Versione Gialla - Speciale Edizione Pikachu (Italy) (CGB+SGB Enhanced)"
+        "title": "Pokémon - Versione Gialla - Speciale Edizione Pikachu (Italy) (CGB+SGB Enhanced)"
     },
     "e805d00b0002156d38b96efd57c823b0db3a3ef4cd32f98bd9bb4779bda3dd5b": {
-        "title": "Pokemon - Versione Rossa (Italy) (SGB Enhanced)"
+        "title": "Pokémon - Versione Rossa (Italy) (SGB Enhanced)"
     },
     "8cbaa499397e4f1a679c992ea9382a2dd7942ab398b48c19829c2d9529de47bf": {
-        "title": "Pokemon - Yellow Version - Special Pikachu Edition (CGB+SGB Enhanced)"
+        "title": "Pokémon - Yellow Version - Special Pikachu Edition (CGB+SGB Enhanced)"
     },
     "d549687901fc18b03c4b6fcd54aefc1150012b619668aee9f66963ca89ec9c16": {
-        "title": "Pokemon - Yellow Version - Special Pikachu Edition (1999-02-22) (CGB+SGB Enhanced) (Alt)"
+        "title": "Pokémon - Yellow Version - Special Pikachu Edition (1999-02-22) (CGB+SGB Enhanced) (Alt)"
     },
     "009b562bdc43f1c38f75938da126c7829ce123cca94ce032d30464de7457b7a5": {
-        "title": "Pokemon - Yellow Version - Special Pikachu Edition (1999-02-03) (CGB+SGB Enhanced)"
+        "title": "Pokémon - Yellow Version - Special Pikachu Edition (1999-02-03) (CGB+SGB Enhanced)"
     },
     "fbc50ef419d957f9c3270f2fe935df8a3dade7b08ed6f776e65d9a3a6043dad1": {
-        "title": "Pokemon - Yellow Version - Special Pikachu Edition (1999-02-03) (CGB+SGB Enhanced) (Alt)"
+        "title": "Pokémon - Yellow Version - Special Pikachu Edition (1999-02-03) (CGB+SGB Enhanced) (Alt)"
     },
     "6d3f3459f83da18197ef4fb23bb4b0dc7a4a5643589da5bcb5dbe4e168941a1d": {
-        "title": "Pokemon - Yellow Version - Special Pikachu Edition (1999-02-18) (CGB+SGB Enhanced)"
+        "title": "Pokémon - Yellow Version - Special Pikachu Edition (1999-02-18) (CGB+SGB Enhanced)"
     },
     "bf7682fa4c30ec21136f67d0d58f283ab61a185c10df6e1e84c2a1f58031a100": {
-        "title": "Pokemon - Yellow Version - Special Pikachu Edition (1999-02-15) (CGB+SGB Enhanced)"
+        "title": "Pokémon - Yellow Version - Special Pikachu Edition (1999-02-15) (CGB+SGB Enhanced)"
     },
     "3683c0ee8ddbbe5becdbb910dbfbcf97a15bf6e8933ed666166ddb2c1cce6305": {
-        "title": "Pokemon - Yellow Version - Special Pikachu Edition (1999-02-16) (CGB+SGB Enhanced)"
+        "title": "Pokémon - Yellow Version - Special Pikachu Edition (1999-02-16) (CGB+SGB Enhanced)"
     },
     "9d9bc6886f7efe86e363aab4de1c0d020a1afc0091119affe68c42ea2417ed39": {
-        "title": "Pokemon - Yellow Version - Special Pikachu Edition (1999-02-22) (CGB+SGB Enhanced)"
+        "title": "Pokémon - Yellow Version - Special Pikachu Edition (1999-02-22) (CGB+SGB Enhanced)"
     },
     "2d62b45d79cfbcb704917e9a25170bd256dd3aa74ea2e9d538c605151343c340": {
-        "title": "Pokemon - Yellow Version - Special Pikachu Edition (1999-02-17) (CGB+SGB Enhanced)"
+        "title": "Pokémon - Yellow Version - Special Pikachu Edition (1999-02-17) (CGB+SGB Enhanced)"
     },
     "90a92022d1a8b18d106612186d1b3601a7e67fef6153c470bbaf47029466fae1": {
-        "title": "Pokemon - Yellow Version - Special Pikachu Edition (1999-02-10) (CGB+SGB Enhanced)"
+        "title": "Pokémon - Yellow Version - Special Pikachu Edition (1999-02-10) (CGB+SGB Enhanced)"
     },
     "451d52a045da3a44bf0d57d4d99213503241bb64b05facde000158f8085cc829": {
         "title": "Pokonyan! - Yume no Daibouken (SGB Enhanced)"
@@ -5106,13 +5115,22 @@
         "title": "Tesserae"
     },
     "7fde11dd4e594a6905deccd57943d2909ecb37665a030741c42155aeb346323b": {
-        "title": "Tetris"
+        "title": "Tetris",
+        "banner": "https://cdn2.steamgriddb.com/hero_thumb/1ce7e1b08aefa82dca980ed52b550310.jpg",
+        "logo": "https://cdn2.steamgriddb.com/logo_thumb/07b4498a303789d2829445c725dae35a.png",
+        "cover": "https://cdn2.steamgriddb.com/thumb/61a6ab285b480677841895cc5d251cf4.jpg"
     },
     "0d6535aef23969c7e5af2b077acaddb4a445b3d0df7bf34c8acef07b51b015c3": {
-        "title": "Tetris"
+        "title": "Tetris",
+        "banner": "https://cdn2.steamgriddb.com/hero_thumb/1ce7e1b08aefa82dca980ed52b550310.jpg",
+        "logo": "https://cdn2.steamgriddb.com/logo_thumb/07b4498a303789d2829445c725dae35a.png",
+        "cover": "https://cdn2.steamgriddb.com/thumb/61a6ab285b480677841895cc5d251cf4.jpg"
     },
     "2c3bc48a4ec9b6c640b83ce6524570f472db329d4a96d0b527b34abd42b7d695": {
-        "title": "Tetris 2 (SGB Enhanced)"
+        "title": "Tetris 2 (SGB Enhanced)",
+        "banner": "https://cdn2.steamgriddb.com/hero_thumb/1ce7e1b08aefa82dca980ed52b550310.jpg",
+        "logo": "https://cdn2.steamgriddb.com/logo_thumb/07b4498a303789d2829445c725dae35a.png",
+        "cover": "https://cdn2.steamgriddb.com/thumb/61a6ab285b480677841895cc5d251cf4.jpg"
     },
     "771d24adf7dd11ff166fc43d3f2be66dd7a24251b8920e813956c62514813051": {
         "title": "Tetris 2"

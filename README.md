@@ -17,7 +17,7 @@ Tungsten's UI is structured similar to Steam Desktop's, so it should be easy to 
 ---
 
 ## Controller Support
-All games have controller support just like the original. Just connect a controller via Bluetooth or USB‍-‍A / USB‍-‍C and you should be able to connect a controller to the game.
+Tungsten Emulator also has controller support, so you can simply connect a controller (USB or Bluetooth) and start using it right away.
 
 ---
 

@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Xenon Emulator</title>
+    <title>Tungsten Emulator</title>
     <link rel="stylesheet" href="/index.css">
     <link rel="shortcut icon" href="/assets/img/icon.svg" type="image/x-icon">
 </head>
-<body>
+<body class="basicDark">
     <header> <!-- navbar -->
         <ul class="navbar">
             <li class="block1">
                 <li class="item">
                     <a href="/">
-                        <img src="/assets/img/iconHollow.svg" alt="Icon">
-                        Xenon Emulator
+                        <img src="/assets/img/iconHollow.svg" alt="Icon" class="logo">
+                        Tungsten Emulator
                     </a>
                 </li>
             </li>
@@ -34,16 +34,39 @@
                         Sign Up
                     </a>
                 </li>
-                <li>
-                    <a href="javascript:void(0)" class="item link gbtn">
+                <li id="pclick">
+                    <a href="/profile/me" class="item link gbtn">
                         <img src="/assets/img/avatarBlank.svg" id="avatar">
                         &emsp;&zwj;&nbsp;&nbsp;&nbsp;<span id="displayName">---</span>
                     </a>
-                </li>
-                <li>
-                    <a href="javascript:void(0)" class="item link gbtn" id="signout">
-                        Sign Out
-                    </a>
+                    <div id="profileMenu">
+                        <ul>
+                            <li>
+                                <a href="/profile/me">
+                                    <i class="material-icons-round">person</i>
+                                    Profile
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/settings">
+                                    <i class="material-icons-round">settings</i>
+                                    Settings
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/collection">
+                                    <i class="material-icons-round">collections</i>
+                                    Collection
+                                </a>
+                            </li>
+                            <li>
+                                <a href="javascript:void(0)" id="signout">
+                                    <i class="material-icons-round">logout</i>
+                                    Sign Out
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </li>
             </li>
         </ul>
@@ -53,10 +76,8 @@
             <div class="tcont">
                 <img src="/assets/img/icon.svg" alt="Icon">
                 <div>
-                    <h1>Dump, Load, Play<span class="playful">.</span></h1>
-                    <p>
-                        Xenon Emulator is a retro game emulator built to easily play old video games on the web. Upload your ROM files, and start playing immediately.
-                    </p>
+                    <h1 id="tagline"><span><span id="tag1">Dump,</span> <span id="tag2">Load,</span> <span id="tag3">Play</span></span><span class="playful">.</span></h1>
+                    <p>Tungsten Emulator is a feature&zwj;-&zwj;rich, browser&zwj;-&zwj;based retro-game emulator that can run games (and ROM hacks) from 16+ consoles. Dump game data, load ROM files, and start playing.</p>
                     <div class="btnrow">
                         <a href="/auth/login" class="login lbtn">
                             <button>Log In</button>
@@ -73,35 +94,57 @@
         </div>
         <section id="about">
             <div class="content">
-                <h2>Support for 16+ Consoles</h2>
-                <p>
-                    With emulation powered by RetroArch, you can easily emulate games from 16+ different consoles, including the NES, SNES, N64, PlayStation 1, SEGA Genesis, etc (<em>including</em> 3DS and PSP!).
+                <h2 class="page">
+                    Support for 16+ Consoles
+                </h2>
+                <p class="centre">
+                    With emulation powered by WASM-RetroArch, you can emulate games at a reasonable FPS from 16+ different* consoles, including but not limited to the NES, SNES, N64, Nintendo DS, SEGA MegaDrive, Atari, etc.
                 </p>
             </div>
         </section>
-        <section id="projects">
+        <section class="dark">
             <div class="content">
-                <h2>Controller Support</h2>
-                <p>
-                    All games have controller support just like the original. Just connect a controller via BlueTooth or USB&zwj;-&zwj;A&nbsp;/&nbsp;USB&zwj;-&zwj;C and you should be able to connect a controller to the game.
+                <h2 class="page">
+                    Familiar UI
+                </h2>
+                <p class="centre">Tungsten's UI is structured similar to Steam Desktop's, so it should be easy to use.</p>
+                <p>There are a variety of themes to choose from, so you can choose an appearance that works for you.</p>
+                <img src="/assets/img/screenshots/1.png" alt="ggblockster's Collection - Tungsten Emulator v1.3.0" class="inline">
+            </div>
+        </section>
+        <section id="controllers">
+            <div class="content">
+                <h2 class="page">
+                    Controller Support
+                </h2>
+                <p class="centre">
+                    Tungsten Emulator also has controller support, so you can simply connect a controller (USB or Bluetooth) and start using it right away.
                 </p>
             </div>
         </section>
-        <section>
+        <section id="savestates">
             <div class="content">
-                <h2>Cloud Saves</h2>
-                <p>
-                    All your progress and preferences are saved to the cloud automatically so don't worry about losing progress on new devices. You can also choose to inject save states or locally backup save states.
+                <h2 class="page">
+                    Save States
+                </h2>
+                <p class="centre">
+                    You can have up to <b>nine</b> save files at any given time for any game, and you can also choose to inject save files (usually <code>.sav</code> or <code>.srm</code> files). Cloud synced save files are coming soon, so stay tuned for that.
                 </p>
+            </div>
+        </section>
+        <section id="more">
+            <div class="content">
+                <h3 class="announce">BUT THAT'S NOT ALL!</h3>
+                <p class="centre">There are still <em>so much</em> more features that haven't already been mentioned above.</p>
             </div>
         </section>
         <footer>
             <div class="content">
-                <h3>Xenon Emulator<span class="playful">.</span></h3>
+                <h3>Tungsten Emulator<span class="playful">.</span></h3>
                 <p>&#127279; Made by ggblockster, <span id="currentYear">XXXX</span></p>
-                <p>All code for this project is available under the <a href="/LICENSE" target="_blank">GPL v3.0</a> license on <a href="https://github.com/ggblockster/xenon-emulator" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
+                <p>All code for this project is available under the <a href="/LICENSE" target="_blank">GPL v3.0</a> license on <a href="https://github.com/ggblockster/tungsten-emulator" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
                 <div id="poweredByRow">
-                    <a href="https://netlify.com" target="_blank" rel="noopener noreferrer"><img src="/assets/logos/netlify.png" alt="Netlify"></a>
+                    <a href="https://cloudflare.com" target="_blank" rel="noopener noreferrer"><img src="/assets/logos/cloudflare.png" alt="Netlify"></a>
                     <a href="https://supabase.com" target="_blank" rel="noopener noreferrer"><img src="/assets/logos/supabase.png" alt="Supabase"></a>
                 </div>
             </div>

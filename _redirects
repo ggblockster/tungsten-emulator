@@ -1,0 +1,2 @@
+/profile/me    /profile/self    200
+/profile/*    /profile/other    200

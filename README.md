@@ -21,12 +21,5 @@ Tungsten Emulator also has controller support, so you can simply connect a contr
 
 ---
 
-## Save States
-You can have up to **nine** save states at any given time for any game, and you can also choose to inject save states (usually `.sav` or `.srm` files).
-
-Cloud synced save states are coming soon, so stay tuned for that.
-
----
-
 Powered by [Cloudflare](https://cloudflare.com/) and [Supabase](https://supabase.com/).
 This project is available open-source under the GPL v3.0 license.

@@ -28,10 +28,19 @@ export const gFilesize = document.getElementById("gFilesize");
 export const mostPlayedList = document.getElementById("mostPlayedList");
 export const bioCharaLimit = document.getElementById("bioCharaLimit");
 export const userBioInput = document.getElementById("userBio");
+export const openAsTab = document.getElementById("openAsTab");
 
 const optionsTrigger = document.getElementById("runOptionsTrigger");
 const optionsMenu = document.getElementById("runOptionsMenu");
 export const saveLocally = document.getElementById("saveLocally");
+
+export const displayNamePreview = document.getElementById("dpPrev");
+export const usernamePreview = document.getElementById("unlab");
+export const pfpPreview = document.getElementById("pfpPrev");
+export const pfpChoices = document.querySelectorAll(".pfpchoice");
+export const pfpBGselect = document.getElementById("pfpbg");
+export const bioInp = document.getElementById("bioInp");
+export const bioPreview = document.getElementById("bioPreview");
 
 if (shaWrapper) shaWrapper.hidden = true;
 if (gameDesc) gameDesc.hidden = true;
@@ -39,7 +48,6 @@ if (noneFound) noneFound.hidden = true;
 if (missingBadge) missingBadge.hidden = true;
 if (gameLogo) gameLogo.style.display = "none";
 
-// adds a game to the ui list
 export function addGameToList(game) {
     const li = document.createElement("li");
     li.dataset.sha256 = game.sha256;
@@ -66,7 +74,6 @@ export function addGameToList(game) {
     updateEmptyState();
 }
 
-// updates rom local state
 export function markRomInstalled(sha256) {
     const li = gameListEl.querySelector(
         `[data-sha256="${sha256}"]`
@@ -92,10 +99,7 @@ export function showGameDetails(rom) {
 
 
 // applies play button state refresh
-export function updateRunButton(
-    selectedRom,
-    emulatorWindow
-) {
+export function updateRunButton(selectedRom, emulatorWindow) {
     const running =
         emulatorWindow &&
         !emulatorWindow.closed;
@@ -107,16 +111,13 @@ export function updateRunButton(
 }
 
 
-// Empty collection message
 export function updateEmptyState() {
-    noneFound.hidden =
-        gameListEl.children.length > 0;
+    noneFound.hidden = gameListEl.children.length > 0;
 }
 
 if (gameSearch) {
     gameSearch.addEventListener("input", () => {
         const search = gameSearch.value.trim().toLowerCase();
-
         const listROM = document.querySelectorAll(".listROM");
         listROM.forEach(li => {
             const title = li.title.toLowerCase();

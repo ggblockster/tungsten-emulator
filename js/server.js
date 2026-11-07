@@ -1,11 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { bioCharaLimit, loadingBG, mostPlayedList, userBioInput } from "./dom.js";
+import { bioInp, bioPreview, displayNamePreview, loadingBG, mostPlayedList, pfpBGselect, pfpChoices, pfpPreview, userBioInput, usernamePreview } from "./dom.js";
 import { consoleLookup, getPlatform } from "./cores.js";
-import { getGameMetadata, secondsToHM } from "./metadata.js";
+import { getGameMetadata } from "./metadata.js";
 
 const projectURL = "https://uheoensvodegstcnunay.supabase.co";
 const publishableKey = "sb_publishable_J9Mcy6wfFlE1OO4euTnVJg_Ncnrh35r";
-
 export const supabase = createClient(projectURL, publishableKey);
 
 //ui__signup
@@ -48,6 +47,12 @@ if (signupSubmit) {
             signupPassword.value.trim(),
             signupUsername.value.trim()
         );
+    });
+}
+
+if (signupUsername) {
+    signupUsername.addEventListener("input", ()=> {
+        signupUsername.value =  signupUsername.value.replace(/[^a-z0-9]/g, "");
     });
 }
 
@@ -226,11 +231,76 @@ if (document.getElementById("gameList")) {
     noneFound.hidden = gameList.children.length > 0;
 }
 
+if (document.body.classList.contains("settings")) {
+    const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("display_name, bio, avatar_bg, collection, avatar_url, username")
+        .eq("uuid", user.id)
+        .maybeSingle();
+    displayNamePreview.value = profile.display_name || profile.username;
+    pfpPreview.src = profile.avatar_url;
+    usernamePreview.textContent = profile.username;
+    displayNamePreview.addEventListener("change", async () => {
+        const display_name = displayNamePreview.value.trim();
+        const { error } = await supabase
+            .from("profiles")
+            .update({ display_name })
+            .eq("uuid", user.id);
+        if (error) {
+            console.error("Failed to save display name:", error);
+        }
+    });
+    pfpChoices.forEach(choice => {
+        choice.addEventListener("click", async () => {
+            pfpChoices.forEach(el => el.classList?.remove("selected"));
+            const avatar_url = choice.src.replace(window.location.origin, "");
+            const { error } = await supabase
+                .from("profiles")
+                .update({ avatar_url })
+                .eq("uuid", user.id);
+            if (error) {
+                console.error("Failed to save avatar:", error);
+            }
+            choice.classList.add("selected");
+            pfpPreview.src = avatar_url;
+        });
+    });
+    pfpBGselect.addEventListener("input", async () => {
+        const avatar_bg = pfpBGselect.value.trim();
+        const { error } = await supabase
+            .from("profiles")
+            .update({ avatar_bg })
+            .eq("uuid", user.id);
+        if (error) {
+            console.error("Failed to save avatar:", error);
+        }
+        pfpPreview.style.background = avatar_bg;
+    });
+    pfpPreview.style.background = profile.avatar_bg || "black";
+    pfpBGselect.value = profile.avatar_bg;
+    document.querySelector(`img[src="${profile.avatar_url.replace(window.location.origin, "")}"]`).classList.add("selected");
+    bioInp.value = profile.bio || "";
+    bioPreview.innerHTML = marked.parse(bioInp.value.trim());
+    bioInp.addEventListener("input", ()=> {
+        bioPreview.innerHTML = DOMPurify.sanitize(marked.parse(bioInp.value.trim()))
+    });
+    bioInp.addEventListener("change", async () => {
+        const bio = bioInp.value.trim();
+        const { error } = await supabase
+            .from("profiles")
+            .update({ bio })
+            .eq("uuid", user.id);
+        if (error) {
+            console.error("Failed to save bio:", error);
+        }
+    });
+}
+
 if (document.getElementById("profile")) {
     if (user && document.body.classList.contains("self")) {
         const { data: profile, error: profileError } = await supabase
             .from("profiles")
-            .select("display_name, bio, created_at, collection, avatar_url, username")
+            .select("display_name, bio, created_at, collection, avatar_url, username, avatar_bg")
             .eq("uuid", user.id)
             .maybeSingle();
     
@@ -245,6 +315,7 @@ if (document.getElementById("profile")) {
             console.error("No profile found for user:", user.id);
         } else {
             document.getElementById("pfAvatar").src = profile.avatar_url || "/assets/img/avatarBlank.svg";
+            document.getElementById("pfAvatar").style.background = profile.avatar_bg;
             document.getElementById("pfDP").textContent = profile.display_name || profile.username;
             const date = new Date(profile.created_at);
             const formatted = new Intl.DateTimeFormat("en-US", {
@@ -252,88 +323,31 @@ if (document.getElementById("profile")) {
                 month: "long",
                 day: "numeric"
             }).format(date);
-            document.getElementById("joinDate").textContent = formatted;
+            const createdAt = new Date(profile.created_at.replace(" ", "T"));
+            const now = new Date();
+            const days = Math.floor((now - createdAt) / 86400000);
+            if (days < 7) {
+                window.utitle = "Newbie"
+            } else if (days < 30) {
+                window.utitle = "Novice"
+            } else if (days < 90) {
+                window.utitle = "Amateur"
+            } else if (days < 150) {
+                window.utitle = "Seasoned"
+            } else if (days < 220) {
+                window.utitle = "Elite"
+            } else if (days < 315) {
+                window.utitle = "Expert"
+            } else if (days < 450) {
+                window.utitle = "Elder"
+            } else if (days < 680) {
+                window.utitle = "Veteran"
+            } else {
+                window.utitle = "Primordial"
+            }
+            document.getElementById("joinDate").textContent = `${window.utitle} \u2022 Joined ${formatted}`;
             const pubLink = document.getElementById("pubLink");
             pubLink.href = `/profile/${profile.username}`;
-            loadingBG.classList.add("hidden");
-            const sortedMostPlayed = Object.entries(profile.collection.games)
-                .sort(([, a], [, b]) =>
-                    Number(b.playtime ?? 0) - Number(a.playtime ?? 0)
-                )
-                .slice(0, 5)
-                .map(([sha256, game]) => ({
-                    sha256,
-                    filename: game.filename,
-                    playtime: Number(game.playtime ?? 0)
-                }));
-            for (const game of sortedMostPlayed) {
-                const metadata = await getGameMetadata(
-                    game.sha256,
-                    getPlatform(game.filename)
-                );
-                const li = document.createElement("li");
-                li.innerHTML = `
-                    <img src="${metadata.cover || metadata.icon || "/assets/img/bannerBlank.svg"}"alt="Cover">
-                    <div class="liCol">
-                        <h3>${metadata?.title ?? game.filename}</h3>
-                        <p>Console: ${consoleLookup[getPlatform(game.filename)]}</p>
-                        <p>${Math.round(game.playtime / 360) / 10} hours on record.</p>
-                    </div>
-                `;
-                mostPlayedList.appendChild(li);
-            }
-            userBioInput.value = profile.bio || "";
-            bioCharaLimit.textContent = `${userBioInput.value.length}/250 chars`
-
-            userBioInput.addEventListener("input", ()=> {
-                bioCharaLimit.textContent = `${userBioInput.value.length}/250 chars`
-            })
-            userBioInput.addEventListener("change", async () => {
-                const bio = userBioInput.value.trim();
-                const { error } = await supabase
-                    .from("profiles")
-                    .update({ bio })
-                    .eq("uuid", user.id);
-                if (error) {
-                    console.error("Failed to save bio:", error);
-                }
-            });
-        }
-    } else if (document.body.classList.contains("other")) {
-        const username = decodeURIComponent(
-            window.location.pathname.split("/").pop()
-        );
-        if (username.endsWith("s")) {
-            document.title = `${username}' Profile | Tungsten Emulator`;
-        } else {
-            document.title = `${username}'s Profile | Tungsten Emulator`;
-        }
-        const { data: profile, error: profileError } = await supabase
-            .from("profiles")
-            .select("uuid, username, display_name, bio, created_at, collection, avatar_url")
-            .eq("username", username)
-            .maybeSingle();
-    
-        if (profileError) {
-            console.error("Profile query failed:", {
-                code: profileError.code,
-                message: profileError.message,
-                details: profileError.details,
-                hint: profileError.hint
-            });
-        } else if (!profile) {
-            console.error("No profile found for user:", profile.uuid);
-        } else {
-            document.getElementById("pfAvatar").src = profile.avatar_url || profile.picture || "/assets/img/avatarBlank.svg";
-            console.log(profile);
-            document.getElementById("pfDP").textContent = profile.display_name || profile.username;
-            const date = new Date(profile.created_at);
-            const formatted = new Intl.DateTimeFormat("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric"
-            }).format(date);
-            document.getElementById("joinDate").textContent = formatted;
             loadingBG.classList.add("hidden");
             const sortedMostPlayed = Object.entries(profile.collection.games)
                 .sort(([, a], [, b]) =>
@@ -361,13 +375,120 @@ if (document.getElementById("profile")) {
                 `;
                 mostPlayedList.appendChild(li);
             }
-            userBioInput.value = profile.bio || "";
+            bioPreview.innerHTML = DOMPurify.sanitize(marked.parse(profile.bio));
+        }
+    } else if (document.body.classList.contains("other")) {
+        const username = decodeURIComponent(
+            window.location.pathname.split("/").pop()
+        );
+        const { data: profile, error: profileError } = await supabase
+            .from("profiles")
+            .select("uuid, username, display_name, bio, created_at, collection, avatar_url, avatar_bg")
+            .eq("username", username)
+            .maybeSingle();
+
+        if (profile.display_name) {
+            document.title = `${profile.display_name}'s Profile | Tungsten Emulator`
+        } else {
+            document.title = `${profile.username}'s Profile | Tungsten Emulator`
+        }
+
+        try {
+            const { data: um, error: ume } = await supabase
+                .from("profiles")
+                .select("username, display_name, avatar_url, avatar_bg")
+                .eq("uuid", user.id)
+                .maybeSingle();
+            document.getElementById("avatar").src = window.um.avatar_url;
+            document.getElementById("avatar").style.background = um.avatar_bg;
+            document.getElementById("displayName").textContent = um.display_name || um.username;
+        } catch(err) {
+            
+        }
+    
+        if (profileError) {
+            console.error("Profile query failed:", {
+                code: profileError.code,
+                message: profileError.message,
+                details: profileError.details,
+                hint: profileError.hint
+            });
+        } else if (!profile) {
+            console.error("No profile found for user:", profile.uuid);
+        } else {
+            document.getElementById("pfAvatar").src = profile.avatar_url || profile.picture || "/assets/img/avatarBlank.svg";
+            document.getElementById("pfAvatar").style.background = profile.avatar_bg;
+            console.log(profile);
+            document.getElementById("pfDP").textContent = profile.display_name || profile.username;
+            const date = new Date(profile.created_at);
+            const formatted = new Intl.DateTimeFormat("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+            }).format(date);
+            const createdAt = new Date(profile.created_at.replace(" ", "T"));
+            const now = new Date();
+            const days = Math.floor((now - createdAt) / 86400000);
+            if (days < 7) {
+                window.utitle = "Newbie"
+            } else if (days < 30) {
+                window.utitle = "Novice"
+            } else if (days < 90) {
+                window.utitle = "Amateur"
+            } else if (days < 150) {
+                window.utitle = "Seasoned"
+            } else if (days < 220) {
+                window.utitle = "Elite"
+            } else if (days < 315) {
+                window.utitle = "Expert"
+            } else if (days < 450) {
+                window.utitle = "Elder"
+            } else if (days < 680) {
+                window.utitle = "Veteran"
+            } else {
+                window.utitle = "Primordial"
+            }
+            document.getElementById("joinDate").textContent = `${window.utitle} \u2022 Joined ${formatted}`;
+            loadingBG.classList.add("hidden");
+            const sortedMostPlayed = Object.entries(profile.collection.games)
+                .sort(([, a], [, b]) =>
+                    Number(b.playtime ?? 0) - Number(a.playtime ?? 0)
+                )
+                .slice(0, 5)
+                .map(([sha256, game]) => ({
+                    sha256,
+                    filename: game.filename,
+                    playtime: Number(game.playtime ?? 0)
+                }));
+            for (const game of sortedMostPlayed) {
+                const metadata = await getGameMetadata(
+                    game.sha256,
+                    getPlatform(game.filename)
+                );
+                const li = document.createElement("li");
+                li.innerHTML = `
+                    <img src="${metadata.cover || metadata.icon || "/assets/img/cover.svg"}"alt="Cover">
+                    <div class="liCol">
+                        <h3>${metadata?.title ?? game.filename}</h3>
+                        <p>Console: ${consoleLookup[getPlatform(game.filename)]}</p>
+                        <p>${Math.round(game.playtime / 360) / 10} hours on record.</p>
+                    </div>
+                `;
+                mostPlayedList.appendChild(li);
+            }
+            bioPreview.innerHTML = DOMPurify.sanitize(marked.parse(profile.bio)) || "";
         }
     }
 }
 
 if (document.getElementById("avatar")) {
-    document.getElementById("avatar").src = userMetadata.avatar_url || "/assets/img/avatarBlank.svg";
+    const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("avatar_url, avatar_bg")
+        .eq("uuid", user.id)
+        .maybeSingle();
+    document.getElementById("avatar").src = profile.avatar_url || "/assets/img/avatarBlank.svg";
+    document.getElementById("avatar").style.background = profile.avatar_bg || "transparent";
 }
 
 if (loginDiscord) {

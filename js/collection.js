@@ -1,517 +1,491 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { bioInp, bioPreview, displayNamePreview, loadingBG, mostPlayedList, pfpBGselect, pfpChoices, pfpPreview, userBioInput, usernamePreview } from "./dom.js";
-import { consoleLookup, getPlatform } from "./cores.js";
-import { getGameMetadata } from "./metadata.js";
+import {
+    saveRom,
+    loadRom,
+    deleteRom,
+    localSaveRom
+} from "./idb.js";
 
-const projectURL = "https://uheoensvodegstcnunay.supabase.co";
-const publishableKey = "sb_publishable_J9Mcy6wfFlE1OO4euTnVJg_Ncnrh35r";
-export const supabase = createClient(projectURL, publishableKey);
+import { cloud, syncCollection } from "./cloud.js";
+import {
+    uploadTrigger, uploadEl, 
+    gameListEl, noneFound, 
+    gameTitleText, gameHero, runBtn, runStatusText,
+    runStatusIcon, reuploadBtn, reuploadInput,
+    removeGameBtn, recordHours, loadingBG,
+    favouriteBtn, favStateIcon,
+    consoleText, missingBadge,
+    addGameToList, gameLogo,
+    noDesc, gameDesc,
+    gSHA256,
+    shaWrapper,
+    gFilename,
+    gFilesize,
+    openAsTab
+} from "./dom.js";
 
-//ui__signup
-const signupEmail = document.getElementById("signupEmail");//input:text
-const signupPassword = document.getElementById("signupPassword");//input:password
-const signupUsername = document.getElementById("signupUsername");//input:text
-const signupSubmit = document.getElementById("signupSubmit");//button
-const signupError = document.getElementById("signupError");
+import { runGame, runGameInTab, setEmulatorCloseCallback } from "./emulator.js";
 
-// signup
-async function signUpNewUser(email, password, username, displayName) {
-    if (!email) return; if (!password) return; if (!username) return;
-    const { data, error } = await supabase.auth.signUp({
-        email: email,
-        password: password,
-        options: {
-            emailRedirectTo: `${window.location.origin}/collection`,
-            data: {
-                username: username,
-                display_name: displayName || username
-            }
-        },
-    });
+import {
+    getGameMetadata
+} from "./metadata.js";
 
-    if (error) { 
-        signupError.style.color = "var(--col-error)";
-        signupError.textContent = `ERROR: ${error.message}`;
+import {
+    getPlatform,
+    getConsoleSVG,
+    consoleLookup
+} from "./cores.js";
+
+let selectedRom = null;
+let selectedSha256 = null;
+let emulatorRunning = false;
+let collectionGames = {};
+let selectedFavourite = false;
+
+noneFound.hidden = true;
+
+uploadTrigger.addEventListener(
+    "click",
+    () => uploadEl.click()
+);
+
+uploadEl.addEventListener(
+    "change",
+    async () => {
+        const file = uploadEl.files[0];
+        if (!file)
+            return;
+
+        try {
+            const sha256 = await hashFile(file);
+            const rom = {
+                sha256,
+                file,
+                filename: file.name,
+                size: file.size,
+                added: Date.now()
+            };
+
+            await saveRom(rom);
+            await cloud.addGame(
+                sha256,
+                file.name
+            );
+
+            addGameToList(rom);
+        } catch(err) {
+            console.error(err);
+        } finally {
+            uploadEl.value = "";
+        }
+    }
+);
+
+function markRomInstalled(sha256) {
+    const li =
+        gameListEl.querySelector(
+            `[data-sha256="${sha256}"]`
+        );
+
+    if (!li)
+        return;
+    li.classList.remove("missing");
+}
+
+function updateFavouriteButton() {
+    favStateIcon.textContent =
+        selectedFavourite
+            ? "star"
+            : "star_border";
+    favStateIcon.title =
+        selectedFavourite
+                ? "Unfavourite Game"
+                : "Favourite Game";
+}
+
+gameListEl.addEventListener("click", async e => {
+    const li = e.target.closest("li");
+    if (!li) return;
+    selectedSha256 = li.dataset.sha256;
+    gameListEl.querySelector(".selected")?.classList.remove("selected");
+    if (li.classList.contains("selected")) {
+        li.classList.remove("selected");
+        window.selected = false;
+        showLibrary();
+        return
+    } else {
+        li.classList.add("selected")
+    }
+
+    const game = collectionGames[selectedSha256];
+    const rom = await loadRom(selectedSha256);
+    if (rom) {
+        missingBadge.hidden = true;
+    } else {
+        missingBadge.hidden = false;
+    }
+
+    if (!rom) {
+        selectedRom = null;
+        selectedFavourite = game?.favourite ?? false;
+        updateFavouriteButton();
+        const metadata = await getGameMetadata(
+            selectedSha256,
+            getPlatform(li.dataset.filename)
+        );
+
+        showGameDetails({
+            sha256: selectedSha256,
+            filename: li.dataset.filename,
+            ...metadata,
+            title: game?.title ?? metadata?.title ?? li.dataset.title
+        });
+
+        reuploadBtn.hidden = false;
+        updateRunButton();
         return;
     }
 
-    signupError.style.color = "var(--col-success)";
-    signupError.textContent = "Success! Check your email to confirm your account.";
-}
+    const metadata = await getGameMetadata(
+        rom.sha256,
+        getPlatform(rom.filename)
+    );
 
-if (signupSubmit) {
-    signupSubmit.addEventListener("click", (e)=> {
-        e.preventDefault();
-        signUpNewUser(
-            signupEmail.value.trim(),
-            signupPassword.value.trim(),
-            signupUsername.value.trim()
-        );
-    });
-}
+    selectedRom = {
+        ...rom,
+        ...metadata
+    };
 
-if (signupUsername) {
-    signupUsername.addEventListener("input", ()=> {
-        signupUsername.value =  signupUsername.value.replace(/[^a-z0-9]/g, "");
-    });
-}
-
-//ui__login
-const loginGithub = document.getElementById("loginGithub"); //button
-const loginDiscord = document.getElementById("loginDiscord");//button
-const loginGoogle = document.getElementById("loginGoogle");//button
-const loginEmail = document.getElementById("loginEmail");//input:text
-const loginPassword = document.getElementById("loginPassword");//input:password
-const loginSubmit = document.getElementById("loginSubmit");//button:submit
-const loginError = document.getElementById("loginError");//p#loginError
-
-//signin
-async function signInWithEmail(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
-    });
-    if (error) return;
-    try {
-        loginError.textContent = `ERROR: ${error.message}`;
-    } catch(err) {
-        console.warn(err)
-    }
-    window.location.href = "/collection";
-}
-
-if (loginSubmit) {
-    loginSubmit.addEventListener("click", (e)=> {
-        e.preventDefault();
-        if (!loginEmail.value.trim()) {
-            loginError.textContent = "ERROR: Missing Email.";
-            return;
-        } else if (!loginPassword.value.trim()) {
-            loginError.textContent = "ERROR: Missing Password";
-            return;
-        }
-        signInWithEmail(loginEmail.value.trim(), loginPassword.value.trim());
-    });
-}
-
-if (loginGithub) {
-    loginGithub.addEventListener("click", async () => {
-        const { data, error } = await supabase.auth.signInWithOAuth({
-            provider: 'github',
-            options: {
-                redirectTo: `${window.location.origin}/collection`
-            }
-        });
-    });
-}
-
-// reset password
-async function forgotPassword(email) {
-    const { error } = await supabase.auth.resetPasswordForEmail(
-        email,
-        {
-            redirectTo: `https://${window.location.hostname}/auth/reset-password`,
-        }
-    )
-
-    if (error) {
-        loginError.style.color = "var(--col-error)";
-        loginError.textContent = `ERROR: ${error.message}`;
-        return
-    }
-
-    loginError.style.color = "var(--col-accent)";
-    loginError.textContent = "If an account exists with this email, you'll receive an email with instructions to reset your password.";
-    sessionStorage.setItem("recoveryEmail", email);
-}
-
-async function resetPasswordConfirm(password, confirmPassword) {
-    if (password !== confirmPassword) {
-        loginError.style.color = "var(--col-error)";
-        loginError.textContent = `ERROR: Passwords do not match!`;
-        return
-    }
-
-    const { error } = await supabase.auth.updateUser({
-        password,
-    });
-    if (error) {
-        loginError.style.color = "var(--col-error)";
-        loginError.textContent = `ERROR: ${error.message}`;
-        return
-    }
-
-    loginError.style.color = "var(--col-success)";
-    loginError.textContent = "Password reset successfully. You will be redirected back to login in a moment."
-    setTimeout(() => {
-        const a = document.createElement("a");
-        a.href = "/auth/login";
-        a.click();
-    }, 3000);
-}
-
-async function verifyOtp(code) {
-    const { error } = await supabase.auth.verifyOtp({
-        email: sessionStorage.getItem("recoveryEmail").trim(),
-        token: code.trim(),
-        type: 'recovery',
-    })
-
-    if (error) {
-        loginError.textContent =
-        'Invalid or expired code. Request a new recovery email.'
-        return
-    }
-    loginError.textContent = "";
-    rpC.style.display = "none";
-    rpInputs.style.display = "flex";
-}
-const fpSubmit = document.getElementById("fpSubmit");
-const rpSubmit = document.getElementById("rpSubmit");
-const rp1 = document.getElementById("rp1");
-const rp2 = document.getElementById("rp2");
-const rpC = document.getElementById("rpC");
-const rpInputs = document.getElementById("rpInputs");
-const otpCodeInput = document.getElementById("code");
-const otpSubmit = document.getElementById("otpSubmit");
-
-if (rpInputs) rpInputs.style.display = "none";
-
-if (fpSubmit) {
-    fpSubmit.addEventListener("click", (e)=> {
-        e.preventDefault();
-        forgotPassword(loginEmail.value.trim());
-    });
-}
-if (rpSubmit) {
-    rpInputs.addEventListener("submit", (e)=> {
-        e.preventDefault();
-        resetPasswordConfirm(rp1.value.trim(), rp2.value.trim());
-    });
-}
-if (otpSubmit) {
-    rpC.addEventListener("submit", (e)=> {
-        e.preventDefault();
-        verifyOtp(otpCodeInput.value.trim());
-        rpC.style.display = "none";
-        rpInputs.style.display = "flex";
-    });
-}
-
-// metadata injection
-let loggedUser = null;
-let userMetadata = null;
-const outOpt = document.querySelectorAll(".gbtn");
-const inOpt = document.querySelectorAll(".lbtn");
-outOpt.forEach(e => {
-    e.hidden = true;
+    selectedFavourite = game?.favourite ?? false;
+    updateFavouriteButton();
+    reuploadBtn.hidden = true;
+    showGameDetails(selectedRom, rom ? true : false);
+    updateRunButton();
 });
-const { data: { user }, error } = await supabase.auth.getUser();
-if (user) {
-    loggedUser = user;
-    userMetadata = loggedUser["user_metadata"];
-    if (["/auth/login", "/auth/login.html", "/auth/signup", "/auth/signup.html"].includes(window.location.pathname)) {
-        window.location.href = "/collection"
-    }
-    outOpt.forEach(e => {
-        e.hidden = false;
-    });
-    inOpt.forEach(e => {
-        e.hidden = true;
-    });
-} else {
-    if (document.body.classList.contains("private")) {
-        const a = document.createElement("a");
-        a.href = "/auth/login";
-        a.click();
-    }
-}
 
-if (document.getElementById("gameList")) {
-    noneFound.hidden = gameList.children.length > 0;
-}
+favouriteBtn.addEventListener(
+    "click",
+    async () => {
 
-if (document.body.classList.contains("settings")) {
-    const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("display_name, bio, avatar_bg, collection, avatar_url, username")
-        .eq("uuid", user.id)
-        .maybeSingle();
-    displayNamePreview.value = profile.display_name || profile.username;
-    pfpPreview.src = profile.avatar_url;
-    usernamePreview.textContent = profile.username;
-    displayNamePreview.addEventListener("change", async () => {
-        const display_name = displayNamePreview.value.trim();
-        const { error } = await supabase
-            .from("profiles")
-            .update({ display_name })
-            .eq("uuid", user.id);
-        if (error) {
-            console.error("Failed to save display name:", error);
-        }
-    });
-    pfpChoices.forEach(choice => {
-        choice.addEventListener("click", async () => {
-            pfpChoices.forEach(el => el.classList?.remove("selected"));
-            const avatar_url = choice.src.replace(window.location.origin, "");
-            const { error } = await supabase
-                .from("profiles")
-                .update({ avatar_url })
-                .eq("uuid", user.id);
-            if (error) {
-                console.error("Failed to save avatar:", error);
-            }
-            choice.classList.add("selected");
-            pfpPreview.src = avatar_url;
-        });
-    });
-    pfpBGselect.addEventListener("input", async () => {
-        const avatar_bg = pfpBGselect.value.trim();
-        const { error } = await supabase
-            .from("profiles")
-            .update({ avatar_bg })
-            .eq("uuid", user.id);
-        if (error) {
-            console.error("Failed to save avatar:", error);
-        }
-        pfpPreview.style.background = avatar_bg;
-    });
-    pfpPreview.style.background = profile.avatar_bg || "black";
-    pfpBGselect.value = profile.avatar_bg;
-    document.querySelector(`img[src="${profile.avatar_url.replace(window.location.origin, "")}"]`).classList.add("selected");
-    bioInp.value = profile.bio || "";
-    bioPreview.innerHTML = marked.parse(bioInp.value.trim());
-    bioInp.addEventListener("input", ()=> {
-        bioPreview.innerHTML = DOMPurify.sanitize(marked.parse(bioInp.value.trim()))
-    });
-    bioInp.addEventListener("change", async () => {
-        const bio = bioInp.value.trim();
-        const { error } = await supabase
-            .from("profiles")
-            .update({ bio })
-            .eq("uuid", user.id);
-        if (error) {
-            console.error("Failed to save bio:", error);
-        }
-    });
-}
+        if (!selectedSha256)
+            return;
 
-if (document.getElementById("profile")) {
-    if (user && document.body.classList.contains("self")) {
-        const { data: profile, error: profileError } = await supabase
-            .from("profiles")
-            .select("display_name, bio, created_at, collection, avatar_url, username, avatar_bg")
-            .eq("uuid", user.id)
-            .maybeSingle();
-    
-        if (profileError) {
-            console.error("Profile query failed:", {
-                code: profileError.code,
-                message: profileError.message,
-                details: profileError.details,
-                hint: profileError.hint
-            });
-        } else if (!profile) {
-            console.error("No profile found for user:", user.id);
-        } else {
-            document.getElementById("pfAvatar").src = profile.avatar_url || "/assets/img/avatarBlank.svg";
-            document.getElementById("pfAvatar").style.background = profile.avatar_bg;
-            document.getElementById("pfDP").textContent = profile.display_name || profile.username;
-            const date = new Date(profile.created_at);
-            const formatted = new Intl.DateTimeFormat("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric"
-            }).format(date);
-            const createdAt = new Date(profile.created_at.replace(" ", "T"));
-            const now = new Date();
-            const days = Math.floor((now - createdAt) / 86400000);
-            if (days < 7) {
-                window.utitle = "Newbie"
-            } else if (days < 30) {
-                window.utitle = "Novice"
-            } else if (days < 90) {
-                window.utitle = "Amateur"
-            } else if (days < 150) {
-                window.utitle = "Seasoned"
-            } else if (days < 220) {
-                window.utitle = "Elite"
-            } else if (days < 315) {
-                window.utitle = "Expert"
-            } else if (days < 450) {
-                window.utitle = "Elder"
-            } else if (days < 680) {
-                window.utitle = "Veteran"
-            } else {
-                window.utitle = "Primordial"
-            }
-            document.getElementById("joinDate").textContent = `${window.utitle} \u2022 Joined ${formatted}`;
-            const pubLink = document.getElementById("pubLink");
-            pubLink.href = `/profile/${profile.username}`;
-            loadingBG.classList.add("hidden");
-            const sortedMostPlayed = Object.entries(profile.collection.games)
-                .sort(([, a], [, b]) =>
-                    Number(b.playtime ?? 0) - Number(a.playtime ?? 0)
-                )
-                .slice(0, 5)
-                .map(([sha256, game]) => ({
-                    sha256,
-                    filename: game.filename,
-                    playtime: Number(game.playtime ?? 0)
-                }));
-            for (const game of sortedMostPlayed) {
-                const metadata = await getGameMetadata(
-                    game.sha256,
-                    getPlatform(game.filename)
-                );
-                const li = document.createElement("li");
-                li.innerHTML = `
-                    <img src="${metadata.cover || metadata.icon || "/assets/img/cover.svg"}"alt="Cover">
-                    <div class="liCol">
-                        <h3>${metadata?.title ?? game.filename}</h3>
-                        <p>Console: ${consoleLookup[getPlatform(game.filename)]}</p>
-                        <p>${Math.round(game.playtime / 360) / 10} hours on record.</p>
-                    </div>
-                `;
-                mostPlayedList.appendChild(li);
-            }
-            bioPreview.innerHTML = DOMPurify.sanitize(marked.parse(profile.bio));
-        }
-    } else if (document.body.classList.contains("other")) {
-        const username = decodeURIComponent(
-            window.location.pathname.split("/").pop()
+        selectedFavourite =
+            !selectedFavourite;
+
+        updateFavouriteButton();
+
+        await cloud.favourite(
+            selectedSha256,
+            selectedFavourite
         );
-        const { data: profile, error: profileError } = await supabase
-            .from("profiles")
-            .select("uuid, username, display_name, bio, created_at, collection, avatar_url, avatar_bg")
-            .eq("username", username)
-            .maybeSingle();
 
-        if (profile.display_name) {
-            document.title = `${profile.display_name}'s Profile | Tungsten Emulator`
+        if (collectionGames[selectedSha256]) {
+            collectionGames[selectedSha256].favourite =
+                selectedFavourite;
+        }
+    }
+);
+
+function formatFileSize(bytes) {
+    const units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+    let i = 0;
+
+    while (bytes >= 1000 && i < units.length - 1) {
+        bytes /= 1000;
+        i++;
+    }
+
+    return `${bytes.toFixed(1)} ${units[i]}`;
+}
+
+function showGameDetails(rom, missing) {
+    gameTitleText.textContent =
+        rom.title ||
+        rom.filename.replace(/\.[^.]+$/, "");
+        
+    descTitle.textContent =
+        rom.title ||
+        rom.filename.replace(/\.[^.]+$/, "");
+
+    noDesc.style.display = rom.desc ? "none" : "block";
+    gameDesc.style.display = rom.desc ? "block" : "none";
+    gFilename.textContent = rom.filename;
+    if (missing === undefined) {
+        gFilesize.textContent = "N/A"
+    } else {
+        gFilesize.textContent = formatFileSize(rom.size);
+    }
+    if (rom.desc) {
+        gameDesc.innerHTML = rom.desc;
+    }
+
+    gSHA256.textContent = rom.sha256;
+    shaWrapper.hidden = false;
+
+    gameTitleText.classList.remove("ital");
+    if (rom.banner) {
+        gameHero.style.backgroundImage = `
+        linear-gradient(
+            to bottom,
+            transparent 40%,
+            #1a1d29 100%
+        ),
+        url(${rom.banner})`;
+        gameHero.style.backgroundSize = "100%";
+        gameHero.style.backgroundRepeat = "none";
+    } else {
+        const svgRef = getPlatform(rom.filename);
+        gameHero.style.backgroundImage = `url(${getConsoleSVG(svgRef)})`;
+        gameHero.style.backgroundRepeat = "repeat";
+        if (gameHero.style.backgroundImage == "url(/assets/img/controllers/bannerBlank.svg") {
+            gameHero.style.backgroundSize = "88px";
         } else {
-            document.title = `${profile.username}'s Profile | Tungsten Emulator`
+            gameHero.style.backgroundSize = "196px auto";
+        }
+    }
+
+    if (rom.logo) {
+        gameLogo.style.display = "block";
+        gameLogo.src = rom.logo;
+        gameTitleText.style.display = "none";
+    } else {
+        gameTitleText.style.display = "block";
+        gameLogo.style.display = "none";
+        gameLogo.src = "";
+    }
+
+    try {
+        consoleText.textContent = consoleLookup[getPlatform(rom.filename)];
+    } catch {
+        consoleText.textContent = "?????";
+    }
+
+    runStatusText.textContent = "Play";
+    runStatusIcon.textContent = "play_arrow";
+    const game = collectionGames[rom.sha256];
+    const seconds = game?.playtime ?? 0;
+    recordHours.textContent = (seconds / 3600).toFixed(1);
+}
+
+function updateRunButton() {
+    runBtn.disabled =
+        !selectedRom ||
+        emulatorRunning;
+}
+
+removeGameBtn.addEventListener(
+    "click",
+    async () => {
+        if (!selectedSha256)
+            return;
+        if (!confirm("Remove ROM? You will need to reupload your ROM to play at a later time.")) return;
+
+        await deleteRom(
+            selectedSha256
+        );
+
+        gameListEl
+            .querySelector(
+                `[data-sha256="${selectedSha256}"]`
+            )
+            ?.remove();
+
+        selectedRom = null;
+        selectedSha256 = null;
+        updateEmptyState();
+        updateRunButton();
+    }
+);
+
+document.getElementById("removeGame").addEventListener(
+    "click",
+    async () => {
+        if (!selectedSha256)
+            return;
+        if (!confirm("PERMANENTLY remove this game from your collection?\n(THIS CANNOT BE UNDONE!!!)")) return;
+        await cloud.removeGame(
+            selectedSha256
+        );
+
+        await deleteRom(
+            selectedSha256
+        );
+
+        gameListEl
+            .querySelector(
+                `[data-sha256="${selectedSha256}"]`
+            )
+            ?.remove();
+
+        selectedRom = null;
+        selectedSha256 = null;
+        updateEmptyState();
+        updateRunButton();
+    }
+);
+
+reuploadBtn.addEventListener(
+    "click",
+    () => {
+        if(selectedSha256)
+            reuploadInput.click();
+    }
+);
+
+reuploadInput.addEventListener(
+    "change",
+    async () => {
+        const file =
+            reuploadInput.files[0];
+        if(!file)
+            return;
+        const sha256 =
+            await hashFile(file);
+
+        if(sha256 !== selectedSha256) {
+            alert(
+                "This ROM does not match the missing game."
+            );
+            reuploadInput.value = "";
+            return;
         }
 
-        try {
-            const { data: um, error: ume } = await supabase
-                .from("profiles")
-                .select("username, display_name, avatar_url, avatar_bg")
-                .eq("uuid", user.id)
-                .maybeSingle();
-            document.getElementById("avatar").src = window.um.avatar_url;
-            document.getElementById("avatar").style.background = um.avatar_bg;
-            document.getElementById("displayName").textContent = um.display_name || um.username;
-        } catch(err) {
-            
-        }
-    
-        if (profileError) {
-            console.error("Profile query failed:", {
-                code: profileError.code,
-                message: profileError.message,
-                details: profileError.details,
-                hint: profileError.hint
-            });
-        } else if (!profile) {
-            console.error("No profile found for user:", profile.uuid);
-        } else {
-            document.getElementById("pfAvatar").src = profile.avatar_url || profile.picture || "/assets/img/avatarBlank.svg";
-            document.getElementById("pfAvatar").style.background = profile.avatar_bg;
-            console.log(profile);
-            document.getElementById("pfDP").textContent = profile.display_name || profile.username;
-            const date = new Date(profile.created_at);
-            const formatted = new Intl.DateTimeFormat("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric"
-            }).format(date);
-            const createdAt = new Date(profile.created_at.replace(" ", "T"));
-            const now = new Date();
-            const days = Math.floor((now - createdAt) / 86400000);
-            if (days < 7) {
-                window.utitle = "Newbie"
-            } else if (days < 30) {
-                window.utitle = "Novice"
-            } else if (days < 90) {
-                window.utitle = "Amateur"
-            } else if (days < 150) {
-                window.utitle = "Seasoned"
-            } else if (days < 220) {
-                window.utitle = "Elite"
-            } else if (days < 315) {
-                window.utitle = "Expert"
-            } else if (days < 450) {
-                window.utitle = "Elder"
-            } else if (days < 680) {
-                window.utitle = "Veteran"
-            } else {
-                window.utitle = "Primordial"
-            }
-            document.getElementById("joinDate").textContent = `${window.utitle} \u2022 Joined ${formatted}`;
-            loadingBG.classList.add("hidden");
-            const sortedMostPlayed = Object.entries(profile.collection.games)
-                .sort(([, a], [, b]) =>
-                    Number(b.playtime ?? 0) - Number(a.playtime ?? 0)
-                )
-                .slice(0, 5)
-                .map(([sha256, game]) => ({
-                    sha256,
+        await saveRom({
+            sha256,
+            file,
+            filename:file.name,
+            size:file.size,
+            added:Date.now()
+        });
+
+        markRomInstalled(
+            sha256
+        );
+        reuploadInput.value = "";
+    }
+);
+
+const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
+
+async function loadCollection() {
+    loadingBG.classList.remove("hidden");
+    try {
+        const games =
+            await syncCollection();
+            collectionGames = {};
+        for (const game of games) {
+            collectionGames[game.sha256] = game;
+            const local = await loadRom(game.sha256);
+            const rom =
+                local ??
+                {
+                    sha256: game.sha256,
                     filename: game.filename,
-                    playtime: Number(game.playtime ?? 0)
-                }));
-            for (const game of sortedMostPlayed) {
-                const metadata = await getGameMetadata(
-                    game.sha256,
-                    getPlatform(game.filename)
+                    missing: true
+                };
+            const metadata =
+                await getGameMetadata(
+                    rom.sha256,
+                    getPlatform(rom.filename)
                 );
-                const li = document.createElement("li");
-                li.innerHTML = `
-                    <img src="${metadata.cover || metadata.icon || "/assets/img/cover.svg"}"alt="Cover">
-                    <div class="liCol">
-                        <h3>${metadata?.title ?? game.filename}</h3>
-                        <p>Console: ${consoleLookup[getPlatform(game.filename)]}</p>
-                        <p>${Math.round(game.playtime / 360) / 10} hours on record.</p>
-                    </div>
-                `;
-                mostPlayedList.appendChild(li);
-            }
-            bioPreview.innerHTML = DOMPurify.sanitize(marked.parse(profile.bio)) || "";
+            addGameToList({
+                ...rom,
+                ...metadata
+            });
         }
+    } catch (err) {
+        console.error(
+            "Collection loading failed:",
+            err
+        );
+    } finally {
+        loadingBG.classList.add("hidden");
+        const rand = Math.floor(Math.random()*gameListEl.childNodes.length);
+        gameListEl.querySelector(`:nth-child(${clamp(1, rand+1, gameListEl.childNodes.length-1)})`).click()
     }
 }
 
-if (document.getElementById("avatar")) {
-    const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("avatar_url, avatar_bg")
-        .eq("uuid", user.id)
-        .maybeSingle();
-    document.getElementById("avatar").src = profile.avatar_url || "/assets/img/avatarBlank.svg";
-    document.getElementById("avatar").style.background = profile.avatar_bg || "transparent";
+loadCollection();
+
+setEmulatorCloseCallback(
+    (sha256, seconds) => {
+
+        const game =
+            collectionGames[sha256];
+
+        if (!game)
+            return;
+
+        game.playtime =
+            (game.playtime ?? 0)
+            + seconds;
+
+        if (selectedSha256 === sha256) {
+            recordHours.textContent =
+                (
+                    game.playtime / 3600
+                ).toFixed(1);
+        }
+    }
+);
+
+function updateEmptyState(){
+
+    noneFound.hidden =
+        gameListEl.children.length > 0;
+
 }
 
-if (loginDiscord) {
-    loginDiscord.addEventListener("click", ()=> { alert("Logging in with Discord is currently not available. Please try again later.")});
-}
-if (loginGoogle) {
-    loginGoogle.addEventListener("click", ()=> { alert("Logging in with Google is currently not available. Please try again later.")});
-}
-if (document.getElementById("displayName")) {
-    document.getElementById("displayName").textContent = userMetadata.display_name || userMetadata.name;
+async function hashFile(file){
+    const buffer =
+        await file.arrayBuffer();
+    const hash =
+        await crypto.subtle.digest(
+            "SHA-256",
+            buffer
+        );
+    return [...new Uint8Array(hash)]
+        .map(
+            b =>
+            b.toString(16)
+            .padStart(2,"0")
+        )
+        .join("");
 }
 
-const signoutButton = document.getElementById("signout");
-const settingsSignout = document.getElementById("settingsSignout");
-if (signoutButton) {
-    signoutButton.addEventListener("click", async ()=> {
-        const { data, error } = await supabase.auth.signOut();
-        if (!error) window.location.href = "/auth/login";
-    });
-}
-if (settingsSignout) {
-    settingsSignout.addEventListener("click", async ()=> {
-        const { data, error } = await supabase.auth.signOut();
-        if (!error) window.location.href = "/auth/login";
-    });
-}
+runBtn.addEventListener("click", async () => {
+    if (!selectedRom)
+        return;
+
+    runGame(selectedRom);
+});
+
+openAsTab.addEventListener("click", async () => {
+    if (!selectedRom)
+        return;
+
+    runGameInTab(selectedRom);
+});
+
+saveLocally.addEventListener("click", async()=> {
+    const metadata = await getGameMetadata(selectedRom.sha256, getPlatform(selectedRom.filename));
+    const extension = selectedRom.filename.substring(
+        selectedRom.filename.lastIndexOf(".")
+    );
+    localSaveRom(selectedRom.sha256, `${metadata.title}${extension}` || selectedRom.filename);
+});
+
+// shortcuts
+document.addEventListener("keydown", (e)=> {
+    if (e.code === "Enter" && e.ctrlKey) {
+        runBtn.click()
+    } else if (e.code === "KeyR" && e.altKey) {
+        reuploadBtn.click();
+    } else if (e.code === "KeyS" && e.altKey) {
+        document.getElementById("injectSave").click();
+    } else if (e.code === "Backspace" && e.altKey) {
+        removeGameBtn.click();
+    } else if (e.code === "Delete" && e.shiftKey) {
+        document.getElementById("removeGame").click();
+    }
+});

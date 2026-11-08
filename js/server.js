@@ -300,7 +300,7 @@ if (document.getElementById("profile")) {
     if (user && document.body.classList.contains("self")) {
         const { data: profile, error: profileError } = await supabase
             .from("profiles")
-            .select("display_name, bio, created_at, collection, avatar_url, username, avatar_bg")
+            .select("display_name, bio, created_at, collection, avatar_url, username, avatar_bg, title")
             .eq("uuid", user.id)
             .maybeSingle();
     
@@ -332,19 +332,20 @@ if (document.getElementById("profile")) {
                 window.utitle = "Novice"
             } else if (days < 90) {
                 window.utitle = "Amateur"
-            } else if (days < 150) {
+            } else if (days < 180) {
                 window.utitle = "Seasoned"
-            } else if (days < 220) {
+            } else if (days < 270) {
                 window.utitle = "Elite"
-            } else if (days < 315) {
+            } else if (days < 365) {
                 window.utitle = "Expert"
-            } else if (days < 450) {
+            } else if (days < 730) {
                 window.utitle = "Elder"
-            } else if (days < 680) {
+            } else if (days < 1460) {
                 window.utitle = "Veteran"
             } else {
                 window.utitle = "Primordial"
             }
+            if (profile.title) window.utitle = profile.title;
             document.getElementById("joinDate").textContent = `${window.utitle} \u2022 Joined ${formatted}`;
             const pubLink = document.getElementById("pubLink");
             pubLink.href = `/profile/${profile.username}`;
@@ -383,7 +384,7 @@ if (document.getElementById("profile")) {
         );
         const { data: profile, error: profileError } = await supabase
             .from("profiles")
-            .select("uuid, username, display_name, bio, created_at, collection, avatar_url, avatar_bg")
+            .select("uuid, username, display_name, bio, created_at, collection, avatar_url, avatar_bg, title")
             .eq("username", username)
             .maybeSingle();
 
@@ -435,19 +436,20 @@ if (document.getElementById("profile")) {
                 window.utitle = "Novice"
             } else if (days < 90) {
                 window.utitle = "Amateur"
-            } else if (days < 150) {
+            } else if (days < 180) {
                 window.utitle = "Seasoned"
-            } else if (days < 220) {
+            } else if (days < 270) {
                 window.utitle = "Elite"
-            } else if (days < 315) {
+            } else if (days < 365) {
                 window.utitle = "Expert"
-            } else if (days < 450) {
+            } else if (days < 730) {
                 window.utitle = "Elder"
-            } else if (days < 680) {
+            } else if (days < 1460) {
                 window.utitle = "Veteran"
             } else {
                 window.utitle = "Primordial"
             }
+            if (profile.title) window.utitle = profile.title;
             document.getElementById("joinDate").textContent = `${window.utitle} \u2022 Joined ${formatted}`;
             loadingBG.classList.add("hidden");
             const sortedMostPlayed = Object.entries(profile.collection.games)
@@ -466,14 +468,16 @@ if (document.getElementById("profile")) {
                     getPlatform(game.filename)
                 );
                 const li = document.createElement("li");
-                li.innerHTML = `
-                    <img src="${metadata.cover || metadata.icon || "/assets/img/cover.svg"}"alt="Cover">
-                    <div class="liCol">
-                        <h3>${metadata?.title ?? game.filename}</h3>
-                        <p>Console: ${consoleLookup[getPlatform(game.filename)]}</p>
-                        <p>${Math.round(game.playtime / 360) / 10} hours on record.</p>
-                    </div>
-                `;
+                if (metadata) {
+                    li.innerHTML = `
+                        <img src="${metadata.cover || metadata.icon || "/assets/img/cover.svg"}"alt="Cover">
+                        <div class="liCol">
+                            <h3>${metadata?.title ?? game.filename}</h3>
+                            <p>Console: ${consoleLookup[getPlatform(game.filename)]}</p>
+                            <p>${Math.round(game.playtime / 360) / 10} hours on record.</p>
+                        </div>
+                    `;
+                }
                 mostPlayedList.appendChild(li);
             }
             bioPreview.innerHTML = DOMPurify.sanitize(marked.parse(profile.bio)) || "";
